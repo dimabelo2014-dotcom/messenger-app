@@ -20,86 +20,592 @@ active_calls = {}
 # Хранилище реакций на сообщения {message_id: {reaction: [user_ids]}}
 message_reactions = defaultdict(lambda: defaultdict(list))
 
-# HTML шаблон (встроенный)
+# HTML шаблон (встроенный) - АДАПТИРОВАН ДЛЯ МОБИЛЬНЫХ
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
 <html>
 <head>
     <title>Python Messenger</title>
     <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); height: 100vh; display: flex; justify-content: center; align-items: center; }
-        .login-container { background: white; border-radius: 10px; padding: 40px; width: 400px; }
-        .login-container h1 { margin-bottom: 30px; color: #333; }
-        .login-container input { width: 100%; padding: 12px; margin-bottom: 20px; border: 2px solid #ddd; border-radius: 5px; }
-        .login-container button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 5px; cursor: pointer; width: 100%; }
-        .avatar-preview { width: 100px; height: 100px; border-radius: 50%; margin: 10px auto; background: #f0f0f0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
-        .avatar-upload { margin: 20px 0; text-align: center; }
-        .avatar-upload input { display: none; }
-        .avatar-upload label { background: #667eea; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer; display: inline-block; }
-        .chat-container { display: none; width: 1200px; height: 80vh; background: white; border-radius: 10px; overflow: hidden; }
-        .sidebar { width: 300px; background: #f5f5f5; border-right: 1px solid #ddd; }
-        .main-chat { flex: 1; display: flex; flex-direction: column; }
-        .chat-header { padding: 20px; background: white; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
-        .messages { flex: 1; overflow-y: auto; padding: 20px; }
-        .message { margin-bottom: 15px; max-width: 70%; position: relative; }
-        .message.own { margin-left: auto; }
-        .message-content { background: white; padding: 10px 15px; border-radius: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.1); position: relative; }
-        .message.own .message-content { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .message-info { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #666; margin-bottom: 5px; }
-        .message.own .message-info { text-align: right; color: #ddd; justify-content: flex-end; }
-        .message-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; overflow: hidden; }
-        .message-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .message-input { padding: 20px; background: white; border-top: 1px solid #ddd; display: flex; }
-        .message-input input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 25px; margin-right: 10px; }
-        .message-input button { width: 45px; height: 45px; border-radius: 50%; border: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; cursor: pointer; }
-        .users-list { padding: 20px; }
-        .user-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 5px; margin-bottom: 10px; }
-        .user-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; margin-right: 10px; overflow: hidden; }
-        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .call-controls { display: flex; gap: 10px; }
-        .call-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: #f0f0f0; cursor: pointer; }
-        .call-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: center; }
-        .call-content { background: white; padding: 30px; border-radius: 10px; text-align: center; }
-        .call-actions { display: flex; gap: 20px; margin-top: 20px; }
-        .accept { background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        .reject { background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        .record-btn { background: #f44336; color: white; animation: pulse 1s infinite; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } }
-        .recording-status { display: none; align-items: center; gap: 10px; background: #f44336; color: white; padding: 5px 15px; border-radius: 20px; }
-        audio, video { max-width: 100%; border-radius: 10px; }
-        .video-circle { width: 150px; height: 150px; border-radius: 50%; object-fit: cover; }
-        .action-btns { display: flex; gap: 5px; margin-right: 10px; }
-        .action-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: #f0f0f0; cursor: pointer; }
-        #videoContainer { position: fixed; bottom: 20px; right: 20px; width: 200px; background: black; border-radius: 10px; overflow: hidden; display: none; }
-        #videoContainer video { width: 100%; }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            padding: 10px;
+        }
         
-        /* Стили для реакций */
-        .message-reactions { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
-        .reaction-badge { background: rgba(0,0,0,0.05); border-radius: 20px; padding: 2px 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; transition: all 0.2s; }
-        .message.own .reaction-badge { background: rgba(255,255,255,0.2); }
-        .reaction-badge:hover { transform: scale(1.1); }
-        .reaction-badge.active { background: #667eea; color: white; }
-        .reaction-picker { position: absolute; bottom: 100%; left: 0; background: white; border-radius: 20px; padding: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); display: none; gap: 5px; z-index: 1000; }
-        .message:hover .reaction-picker { display: flex; }
-        .reaction-emoji { width: 30px; height: 30px; border-radius: 50%; border: none; background: #f0f0f0; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .reaction-emoji:hover { transform: scale(1.2); background: #667eea; color: white; }
+        /* Мобильный контейнер входа */
+        .login-container { 
+            background: white; 
+            border-radius: 20px; 
+            padding: 30px 20px; 
+            width: 100%; 
+            max-width: 400px; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .login-container h1 { 
+            margin-bottom: 25px; 
+            color: #333; 
+            font-size: 28px;
+            text-align: center;
+        }
+        .login-container input { 
+            width: 100%; 
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border: 2px solid #ddd; 
+            border-radius: 12px; 
+            font-size: 16px;
+        }
+        .login-container button { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            border: none; 
+            padding: 16px; 
+            border-radius: 12px; 
+            cursor: pointer; 
+            width: 100%; 
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .avatar-preview { 
+            width: 120px; 
+            height: 120px; 
+            border-radius: 60px; 
+            margin: 15px auto; 
+            background: #f0f0f0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            overflow: hidden; 
+            border: 3px solid #667eea;
+        }
+        .avatar-preview img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        .avatar-upload { 
+            margin: 20px 0; 
+            text-align: center; 
+        }
+        .avatar-upload input { 
+            display: none; 
+        }
+        .avatar-upload label { 
+            background: #f0f0f0; 
+            color: #667eea; 
+            padding: 12px 25px; 
+            border-radius: 25px; 
+            cursor: pointer; 
+            display: inline-block; 
+            font-weight: 600;
+            font-size: 16px;
+        }
         
-        /* Стили для профиля */
-        .profile-section { padding: 20px; border-bottom: 1px solid #ddd; }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 10px; overflow: hidden; cursor: pointer; position: relative; }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-avatar-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: opacity 0.2s; }
-        .profile-avatar:hover .profile-avatar-overlay { opacity: 1; }
-        .profile-name { text-align: center; font-weight: bold; }
+        /* Чат контейнер - мобильная версия */
+        .chat-container { 
+            display: none; 
+            width: 100%; 
+            height: 100vh; 
+            background: white; 
+            border-radius: 0; 
+            overflow: hidden; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            flex-direction: column;
+        }
+        
+        /* Верхняя панель */
+        .chat-header { 
+            padding: 15px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .chat-header h2 { 
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        /* Кнопки управления */
+        .call-controls { 
+            display: flex; 
+            gap: 12px; 
+        }
+        .call-btn { 
+            width: 44px; 
+            height: 44px; 
+            border-radius: 22px; 
+            border: none; 
+            background: rgba(255,255,255,0.2); 
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        
+        /* Область сообщений */
+        .messages { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 15px; 
+            background: #f8f9fa;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Сообщения */
+        .message { 
+            margin-bottom: 15px; 
+            max-width: 85%; 
+            position: relative; 
+            animation: fadeIn 0.3s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .message.own { 
+            margin-left: auto; 
+        }
+        .message-content { 
+            background: white; 
+            padding: 12px 16px; 
+            border-radius: 20px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
+            position: relative; 
+            font-size: 16px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .message.own .message-content { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+        }
+        .message-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 13px; 
+            color: #666; 
+            margin-bottom: 4px; 
+        }
+        .message.own .message-info { 
+            text-align: right; 
+            color: #999; 
+            justify-content: flex-end; 
+        }
+        .message-avatar { 
+            width: 30px; 
+            height: 30px; 
+            border-radius: 15px; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            color: white; 
+            font-size: 14px; 
+            overflow: hidden; 
+        }
+        .message-avatar img { 
+            width: 100%; 
+            height: 100%; 
+            object-fit: cover; 
+        }
+        
+        /* Панель ввода */
+        .message-input { 
+            padding: 12px; 
+            background: white; 
+            border-top: 1px solid #eee; 
+            display: flex; 
+            align-items: center;
+            gap: 8px;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
+        }
+        .message-input input { 
+            flex: 1; 
+            padding: 14px 18px; 
+            border: 2px solid #eee; 
+            border-radius: 28px; 
+            font-size: 16px;
+            background: #f8f9fa;
+        }
+        .message-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .message-input button { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 24px; 
+            border: none; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+            color: white; 
+            cursor: pointer; 
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        /* Боковая панель (скрыта на мобильных) */
+        .sidebar { 
+            display: none; 
+        }
+        
+        /* Модальное окно профиля */
+        .profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: flex-end;
+        }
+        .profile-content {
+            background: white;
+            width: 100%;
+            border-radius: 30px 30px 0 0;
+            padding: 30px 20px;
+            animation: slideUp 0.3s;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 60px;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 3px solid #667eea;
+        }
+        .profile-avatar-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .profile-name-large {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .profile-btn {
+            background: #f0f0f0;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .profile-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        /* Кнопка профиля в хедере */
+        .profile-btn-header {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        /* Список пользователей (мобильная версия) */
+        .users-panel {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: white;
+            z-index: 1000;
+            flex-direction: column;
+        }
+        .users-header {
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .users-header h3 {
+            font-size: 20px;
+        }
+        .close-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        .users-list-mobile {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .user-item-mobile {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        .user-avatar-mobile {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-right: 15px;
+            overflow: hidden;
+        }
+        .user-avatar-mobile img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .user-name-mobile {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        
+        /* Медиа файлы */
+        audio, video { 
+            max-width: 100%; 
+            border-radius: 12px; 
+        }
+        .video-circle { 
+            width: 150px; 
+            height: 150px; 
+            border-radius: 75px; 
+            object-fit: cover; 
+        }
+        
+        /* Кнопки действий */
+        .action-btns { 
+            display: flex; 
+            gap: 5px; 
+            flex-shrink: 0;
+        }
+        .action-btn { 
+            width: 48px; 
+            height: 48px; 
+            border-radius: 24px; 
+            border: none; 
+            background: #f0f0f0; 
+            cursor: pointer; 
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Статус записи */
+        .recording-status { 
+            display: none; 
+            align-items: center; 
+            gap: 8px; 
+            background: #f44336; 
+            color: white; 
+            padding: 8px 15px; 
+            border-radius: 25px; 
+            font-size: 16px;
+        }
+        .record-btn { 
+            background: #f44336 !important; 
+            color: white; 
+            animation: pulse 1s infinite; 
+        }
+        @keyframes pulse { 
+            0% { transform: scale(1); } 
+            50% { transform: scale(1.1); } 
+        }
+        
+        /* Модальное окно звонка */
+        .call-modal { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            right: 0; 
+            bottom: 0; 
+            background: rgba(0,0,0,0.8); 
+            display: none; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 2000;
+            padding: 20px;
+        }
+        .call-content { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 30px; 
+            text-align: center; 
+            width: 100%;
+            max-width: 300px;
+        }
+        .call-content h3 {
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+        .call-actions { 
+            display: flex; 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        .accept { 
+            background: #4caf50; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            flex: 1;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        .reject { 
+            background: #f44336; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            flex: 1;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        /* Контейнер видео */
+        #videoContainer { 
+            position: fixed; 
+            bottom: 80px; 
+            right: 15px; 
+            width: 120px; 
+            background: black; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            display: none; 
+            z-index: 1500;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        #videoContainer video { 
+            width: 100%; 
+            height: auto;
+        }
+        
+        /* Реакции */
+        .message-reactions { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 5px; 
+            margin-top: 8px; 
+        }
+        .reaction-badge { 
+            background: rgba(0,0,0,0.05); 
+            border-radius: 20px; 
+            padding: 4px 12px; 
+            font-size: 14px; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 4px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .message.own .reaction-badge { 
+            background: rgba(255,255,255,0.2); 
+        }
+        .reaction-badge.active { 
+            background: #667eea; 
+            color: white; 
+        }
+        .reaction-picker { 
+            position: absolute; 
+            bottom: 100%; 
+            left: 0; 
+            background: white; 
+            border-radius: 30px; 
+            padding: 8px; 
+            box-shadow: 0 2px 15px rgba(0,0,0,0.2); 
+            display: none; 
+            gap: 8px; 
+            z-index: 1000; 
+        }
+        .message:hover .reaction-picker { 
+            display: flex; 
+        }
+        .reaction-emoji { 
+            width: 40px; 
+            height: 40px; 
+            border-radius: 20px; 
+            border: none; 
+            background: #f0f0f0; 
+            cursor: pointer; 
+            font-size: 20px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            transition: all 0.2s; 
+        }
+        .reaction-emoji:active { 
+            transform: scale(1.2); 
+            background: #667eea; 
+            color: white; 
+        }
     </style>
 </head>
 <body>
     <div class="login-container" id="loginContainer">
         <h1>Python Messenger</h1>
-        <input type="text" id="username" placeholder="Ваше имя">
+        <input type="text" id="username" placeholder="Ваше имя" autocomplete="off">
         <div class="avatar-upload">
             <div class="avatar-preview" id="avatarPreview">
                 <span>📷</span>
@@ -111,55 +617,68 @@ HTML_TEMPLATE = '''
     </div>
 
     <div class="chat-container" id="chatContainer">
-        <div class="sidebar">
-            <div class="profile-section">
-                <div class="profile-avatar" onclick="document.getElementById('avatarInputProfile').click()">
-                    <img id="profileAvatar" src="" alt="Avatar">
-                    <div class="profile-avatar-overlay">✏️</div>
-                </div>
-                <div class="profile-name" id="profileName"></div>
-                <input type="file" id="avatarInputProfile" accept="image/*" style="display:none" onchange="updateAvatar(this)">
-            </div>
-            <div class="users-list" id="usersList"></div>
-        </div>
-        <div class="main-chat">
-            <div class="chat-header">
-                <h2>Общий чат</h2>
-                <div class="call-controls">
-                    <button class="call-btn" onclick="startCall()" id="startCallBtn">📞</button>
-                    <button class="call-btn" onclick="endCall()" id="endCallBtn" style="display:none;">🔴</button>
-                </div>
-            </div>
-            <div class="messages" id="messages"></div>
-            <div class="message-input">
-                <div class="action-btns">
-                    <button class="action-btn" onclick="recordVoice()" id="voiceBtn">🎤</button>
-                    <button class="action-btn" onclick="recordVideo()" id="videoBtn">📹</button>
-                </div>
-                <div class="recording-status" id="recordingStatus">
-                    <span>🔴</span>
-                    <span id="recordingTimer">00:00</span>
-                    <button onclick="stopRecording()">⏹️</button>
-                </div>
-                <input type="text" id="messageInput" placeholder="Напишите сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
-                <button onclick="sendMessage()">➤</button>
+        <div class="chat-header">
+            <button class="profile-btn-header" onclick="showProfile()">👤</button>
+            <h2>Общий чат</h2>
+            <div class="call-controls">
+                <button class="call-btn" onclick="showUsers()">👥</button>
+                <button class="call-btn" onclick="startCall()" id="startCallBtn">📞</button>
+                <button class="call-btn" onclick="endCall()" id="endCallBtn" style="display:none;">🔴</button>
             </div>
         </div>
+        
+        <div class="messages" id="messages"></div>
+        
+        <div class="message-input">
+            <div class="action-btns">
+                <button class="action-btn" onclick="recordVoice()" id="voiceBtn">🎤</button>
+                <button class="action-btn" onclick="recordVideo()" id="videoBtn">📹</button>
+            </div>
+            <div class="recording-status" id="recordingStatus">
+                <span>🔴</span>
+                <span id="recordingTimer">00:00</span>
+                <button onclick="stopRecording()">⏹️</button>
+            </div>
+            <input type="text" id="messageInput" placeholder="Сообщение..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно профиля -->
+    <div class="profile-modal" id="profileModal" onclick="if(event.target === this) hideProfile()">
+        <div class="profile-content">
+            <div class="profile-avatar-large">
+                <img id="profileAvatarLarge" src="" alt="Avatar">
+            </div>
+            <div class="profile-name-large" id="profileNameLarge"></div>
+            <button class="profile-btn" onclick="document.getElementById('avatarInputProfile').click()">📷 Изменить аватар</button>
+            <button class="profile-btn primary" onclick="hideProfile()">Закрыть</button>
+            <input type="file" id="avatarInputProfile" accept="image/*" style="display:none" onchange="updateAvatar(this)">
+        </div>
+    </div>
+
+    <!-- Панель пользователей -->
+    <div class="users-panel" id="usersPanel">
+        <div class="users-header">
+            <h3>Участники</h3>
+            <button class="close-btn" onclick="hideUsers()">✕</button>
+        </div>
+        <div class="users-list-mobile" id="usersListMobile"></div>
     </div>
 
     <div class="call-modal" id="callModal">
         <div class="call-content">
             <h3 id="callerInfo">Входящий звонок</h3>
             <div class="call-actions">
-                <button class="accept" onclick="acceptCall()">Принять</button>
-                <button class="reject" onclick="rejectCall()">Отклонить</button>
+                <button class="accept" onclick="acceptCall()">✅</button>
+                <button class="reject" onclick="rejectCall()">❌</button>
             </div>
         </div>
     </div>
 
     <div id="videoContainer">
-        <video id="localVideo" autoplay muted></video>
-        <video id="remoteVideo" autoplay></video>
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -204,8 +723,24 @@ HTML_TEMPLATE = '''
                 }
                 document.getElementById('loginContainer').style.display = 'none';
                 document.getElementById('chatContainer').style.display = 'flex';
-                document.getElementById('profileName').textContent = username;
+                document.getElementById('profileNameLarge').textContent = username;
             }
+        }
+
+        function showProfile() {
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function hideProfile() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        function showUsers() {
+            document.getElementById('usersPanel').style.display = 'flex';
+        }
+
+        function hideUsers() {
+            document.getElementById('usersPanel').style.display = 'none';
         }
 
         function updateAvatar(input) {
@@ -213,7 +748,7 @@ HTML_TEMPLATE = '''
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     socket.emit('update-avatar', { avatar: e.target.result });
-                    document.getElementById('profileAvatar').src = e.target.result;
+                    document.getElementById('profileAvatarLarge').src = e.target.result;
                 };
                 reader.readAsDataURL(input.files[0]);
             }
@@ -222,7 +757,7 @@ HTML_TEMPLATE = '''
         socket.on('user-joined', (data) => {
             currentUserId = data.userId;
             if (data.avatar) {
-                document.getElementById('profileAvatar').src = data.avatar;
+                document.getElementById('profileAvatarLarge').src = data.avatar;
             }
             updateUsersList(data.users);
         });
@@ -232,9 +767,7 @@ HTML_TEMPLATE = '''
         });
 
         socket.on('avatar-updated', (data) => {
-            // Обновляем аватар в списке пользователей
             updateUsersList(data.users);
-            // Обновляем аватары в сообщениях
             updateMessagesAvatars();
         });
 
@@ -251,24 +784,28 @@ HTML_TEMPLATE = '''
         });
 
         function updateUsersList(users) {
-            const list = document.getElementById('usersList');
-            list.innerHTML = '<h3>Участники (' + users.length + ')</h3>';
+            const list = document.getElementById('usersListMobile');
+            list.innerHTML = '';
             users.forEach(user => {
                 if (user.id !== currentUserId) {
                     list.innerHTML += `
-                        <div class="user-item">
-                            <div class="user-avatar">
+                        <div class="user-item-mobile" onclick="callUser('${user.id}')">
+                            <div class="user-avatar-mobile">
                                 ${user.avatar ? '<img src="' + user.avatar + '">' : user.username[0]}
                             </div>
-                            <div>${user.username}</div>
+                            <div class="user-name-mobile">${user.username}</div>
                         </div>
                     `;
                 }
             });
         }
 
+        function callUser(userId) {
+            hideUsers();
+            startCallWithId(userId);
+        }
+
         function updateMessagesAvatars() {
-            // Обновляем аватары в существующих сообщениях
             document.querySelectorAll('.message').forEach(msgDiv => {
                 const userId = msgDiv.dataset.userId;
                 const user = Object.values(users).find(u => u.id === userId);
@@ -294,10 +831,9 @@ HTML_TEMPLATE = '''
             } else if (msg.type === 'voice') {
                 content = '<audio controls src="' + msg.url + '"></audio>';
             } else if (msg.type === 'video') {
-                content = '<video ' + (msg.isCircle ? 'class="video-circle"' : '') + ' controls src="' + msg.url + '"></video>';
+                content = '<video ' + (msg.isCircle ? 'class="video-circle"' : '') + ' controls playsinline src="' + msg.url + '"></video>';
             }
             
-            // Создаем HTML для реакций
             let reactionsHtml = '';
             if (msg.reactions) {
                 for (const [reaction, users] of Object.entries(msg.reactions)) {
@@ -308,7 +844,6 @@ HTML_TEMPLATE = '''
                 }
             }
             
-            // Создаем HTML для пикера реакций
             let reactionPickerHtml = '<div class="reaction-picker">';
             reactions.forEach(r => {
                 reactionPickerHtml += `<button class="reaction-emoji" onclick="toggleReaction('${msg.id}', '${r}')">${r}</button>`;
@@ -320,7 +855,7 @@ HTML_TEMPLATE = '''
                     <div class="message-avatar">
                         ${msg.avatar ? '<img src="' + msg.avatar + '">' : msg.username[0]}
                     </div>
-                    ${msg.username} ${new Date(msg.timestamp).toLocaleTimeString()}
+                    ${msg.username} ${new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </div>
                 <div class="message-content">
                     ${content}
@@ -360,7 +895,6 @@ HTML_TEMPLATE = '''
             }
         }
 
-        // Запись голоса
         async function recordVoice() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -370,7 +904,6 @@ HTML_TEMPLATE = '''
             }
         }
 
-        // Запись видео
         async function recordVideo() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
@@ -428,8 +961,14 @@ HTML_TEMPLATE = '''
             }
         }
 
-        // WebRTC звонки
         async function startCall() {
+            const userId = prompt('Введите ID пользователя для звонка:');
+            if (userId) {
+                startCallWithId(userId);
+            }
+        }
+
+        async function startCallWithId(userId) {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                 document.getElementById('localVideo').srcObject = localStream;
@@ -450,7 +989,7 @@ HTML_TEMPLATE = '''
                 peerConnection.onicecandidate = (e) => {
                     if (e.candidate) {
                         socket.emit('call-user', {
-                            target: prompt('Введите ID пользователя для звонка:'),
+                            target: userId,
                             candidate: e.candidate
                         });
                     }
@@ -460,7 +999,7 @@ HTML_TEMPLATE = '''
                 await peerConnection.setLocalDescription(offer);
                 
                 socket.emit('call-user', {
-                    target: prompt('Введите ID пользователя для звонка:'),
+                    target: userId,
                     offer: offer
                 });
                 
